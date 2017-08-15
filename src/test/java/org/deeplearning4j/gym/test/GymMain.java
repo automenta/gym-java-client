@@ -1,9 +1,9 @@
 package org.deeplearning4j.gym.test;
 
-import org.deeplearning4j.gym.Client;
+import org.deeplearning4j.gym.Gym;
 import org.junit.Test;
 
-public class ClientMain {
+public class GymMain {
 
     @Test
     public void testClient() {
@@ -11,14 +11,15 @@ public class ClientMain {
 
         String url = "http://localhost:5000";
         String env =
-                //"CartPole-v0";
+                "CartPole-v0";
                 //"Pong-v0";
                 //"SpaceInvaders-v0";
-                "Copy-v0";
+                //"LunarLanderContinuous-v2";
+                //"Copy-v0";
 
         boolean render = true;
 
-        Client gym = Client.connect(url, env, render);
+        Gym gym = Gym.connect(url, env, render);
         try {
             System.out.println("Environments: " + gym.environments());
             //client.monitorStart(testDir, true, false);

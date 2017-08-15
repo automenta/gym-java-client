@@ -1,7 +1,6 @@
 package org.deeplearning4j.rl4j.model.in;
 
 import org.json.JSONObject;
-import org.nd4j.linalg.api.ndarray.INDArray;
 
 /**
  * @author rubenfiszel (ruben.fiszel@epfl.ch) on 8/11/16.
@@ -16,7 +15,7 @@ public interface InputSpace<I> {
             case "Discrete":
                 return new DiscreteInputs(j);
             case "Box":
-                return new BoxInputs(j);
+                return BoxInputs.get(j);
             default:
                 throw new UnsupportedOperationException(j.toString());
         }
@@ -25,9 +24,6 @@ public interface InputSpace<I> {
 
     String getName();
 
-    INDArray getLow();
-
-    INDArray getHigh();
 
     I get(Object observation);
 }

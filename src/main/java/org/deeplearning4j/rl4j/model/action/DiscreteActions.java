@@ -13,7 +13,7 @@ import java.util.Random;
 public class DiscreteActions implements ActionSpace<Integer> {
 
     //size of the model also defined as the number of different actions
-    final protected int size;
+    public final int size;
     protected Random rd;
 
     public DiscreteActions(int size) {

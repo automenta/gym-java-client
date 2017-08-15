@@ -7,10 +7,7 @@ import com.mashape.unirest.http.JsonNode;
 import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
 import com.mashape.unirest.request.body.RequestBodyEntity;
-import org.deeplearning4j.rl4j.model.action.ActionSpace;
-import org.deeplearning4j.rl4j.model.action.DiscreteActions;
-import org.deeplearning4j.rl4j.model.action.HighLowDiscreteActions;
-import org.deeplearning4j.rl4j.model.action.TupleActions;
+import org.deeplearning4j.rl4j.model.action.*;
 import org.deeplearning4j.rl4j.model.in.InputSpace;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -32,9 +29,9 @@ import java.util.function.Function;
  * for API specification
  * @see <a href="https://github.com/openai/gym-http-api#api-specification">https://github.com/openai/gym-http-api#api-specification</a>
  */
-public class Client<I, A> {
+public class Gym<I, A> {
 
-    private static final Logger log = LoggerFactory.getLogger(Client.class);
+    private static final Logger log = LoggerFactory.getLogger(Gym.class);
     public static String V1_ROOT = "/v1";
     public static String ENVS_ROOT;
     public static String MONITOR_START;
@@ -72,7 +69,7 @@ public class Client<I, A> {
         ClientUtils.post(url + ENVS_ROOT + SHUTDOWN, new JSONObject());
     }
 
-    public static <I, A> Client<I, A> connect(String url, String envId, boolean render) {
+    public static <I, A> Gym<I, A> connect(String url, String envId, boolean render) {
 
         JSONObject body = new JSONObject().put("env_id", envId);
         JSONObject reply = ClientUtils.post(url + ENVS_ROOT, body).getObject();
@@ -88,7 +85,7 @@ public class Client<I, A> {
         InputSpace observationSpace = fetchObservationSpace(url, instanceId);
         ActionSpace<A> actionSpace = fetchActionSpace(url, instanceId);
 
-        return new Client<>(url, envId, instanceId, observationSpace, actionSpace, render);
+        return new Gym<>(url, envId, instanceId, observationSpace, actionSpace, render);
 
     }
 
@@ -105,14 +102,19 @@ public class Client<I, A> {
         switch (infoName) {
             case "Discrete":
                 return (A) new DiscreteActions(info.getInt("n"));
+            case "Box":
+                return (A) new BoxActions(
+                        ints(info.getJSONArray("shape")),
+                        floats(info.getJSONArray("low")),
+                        floats(info.getJSONArray("high"))
+                );
             case "HighLow":
                 int numRows = info.getInt("num_rows");
                 int size = 3 * numRows;
                 JSONArray matrixJson = info.getJSONArray("matrix");
                 INDArray matrix = Nd4j.create(numRows, 3);
-                for (int i = 0; i < size; i++) {
+                for (int i = 0; i < size; i++)
                     matrix.putScalar(i, matrixJson.getDouble(i));
-                }
                 matrix.reshape(numRows, 3);
                 return (A) new HighLowDiscreteActions(matrix);
             case "Tuple":
@@ -123,6 +125,21 @@ public class Client<I, A> {
             default:
                 throw new RuntimeException("Unknown action model " + infoName + " in " + info);
         }
+    }
+
+    public static int[] ints(JSONArray x) {
+        int ii = x.length();
+        int[] y = new int[ii];
+        for (int i = 0; i < ii; i++)
+            y[i] = x.getInt(i);
+        return y;
+    }
+   public static float[] floats(JSONArray x) {
+        int ii = x.length();
+        float[] y = new float[ii];
+        for (int i = 0; i < ii; i++)
+            y[i] = (float) x.getDouble(i);
+        return y;
     }
 
     public static InputSpace fetchObservationSpace(String url, String instanceId) {
@@ -193,7 +210,7 @@ public class Client<I, A> {
     }
 
     @ConstructorProperties({"url", "envId", "instanceId", "observationSpace", "actionSpace", "render"})
-    public Client(String url, String env, String id, InputSpace inputs, ActionSpace<A> actions, boolean rendered) {
+    public Gym(String url, String env, String id, InputSpace inputs, ActionSpace<A> actions, boolean rendered) {
         this.url = url;
         this.env = env;
         this.id = id;
@@ -221,13 +238,13 @@ public class Client<I, A> {
     public boolean equals(Object o) {
         if (o == this) {
             return true;
-        } else if (!(o instanceof Client)) {
+        } else if (!(o instanceof Gym)) {
             return false;
         } else {
-            Client other;
+            Gym other;
             label72:
             {
-                other = (Client) o;
+                other = (Gym) o;
                 Object this$url = this.url();
                 Object other$url = other.url();
                 if (this$url == null) {
@@ -338,13 +355,12 @@ public class Client<I, A> {
         I next = reset();
 
         for (int j = 0; j < maxSteps; j++) {
-
             Step<I> step = run(agent.apply(next));
             rewardSum += step.reward;
-            next = step.input;
-
             if (step.done) {
                 break;
+            } else {
+                next = step.input;
             }
         }
 

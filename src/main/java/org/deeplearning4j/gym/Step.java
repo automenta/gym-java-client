@@ -2,8 +2,6 @@ package org.deeplearning4j.gym;
 
 import org.json.JSONObject;
 
-import java.beans.ConstructorProperties;
-
 /**
  * @param <I> type of observation
  * @author rubenfiszel (ruben.fiszel@epfl.ch) on 7/6/16.
@@ -16,7 +14,6 @@ public class Step<I> {
     public final boolean done;
     public final JSONObject data;
 
-    @ConstructorProperties({"observation", "reward", "done", "info"})
     public Step(I input, double reward, boolean done, JSONObject data) {
         this.input = input;
         this.reward = reward;

@@ -1,7 +1,6 @@
 package org.deeplearning4j.rl4j.model.in;
 
 import org.json.JSONObject;
-import org.nd4j.linalg.api.ndarray.INDArray;
 
 public class DiscreteInputs implements InputSpace<Integer> {
 
@@ -21,14 +20,5 @@ public class DiscreteInputs implements InputSpace<Integer> {
         return "Discrete";
     }
 
-    @Override
-    public INDArray getLow() {
-        return null;
-    }
-
-    @Override
-    public INDArray getHigh() {
-        return null;
-    }
 
 }
