@@ -131,10 +131,11 @@ public final class BoxInputs implements InputSpace<double[]> {
     }
 
     @Override
-    public double[] get(JSONObject x) {
+    public double[] get(Object o) {
         //System.out.println(x);
         //float[] f = new float[volume];
-        JSONArray a = x.getJSONArray("observation");
+
+        JSONArray a = (JSONArray)o;
 
         switch (shape.length) {
 //        x.getJSONArray(x).

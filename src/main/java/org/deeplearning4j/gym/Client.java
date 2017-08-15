@@ -1,6 +1,7 @@
 package org.deeplearning4j.gym;
 
 
+import com.google.common.collect.Lists;
 import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.JsonNode;
 import com.mashape.unirest.http.Unirest;
@@ -20,7 +21,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.beans.ConstructorProperties;
-import java.util.Set;
 import java.util.function.Function;
 
 /**
@@ -94,8 +94,12 @@ public class Client<I, A> {
 
     static <A extends ActionSpace> A fetchActionSpace(String url, String instanceId) {
 
-        JSONObject reply = ClientUtils.get(url + ENVS_ROOT + instanceId + ACTION_SPACE);
+        final JSONObject reply = ClientUtils.get(url + ENVS_ROOT + instanceId + ACTION_SPACE);
         JSONObject info = reply.getJSONObject("info");
+        return actionSpace(info);
+    }
+
+    private static <A extends ActionSpace> A actionSpace(JSONObject info) {
         String infoName = info.getString("name");
 
         switch (infoName) {
@@ -112,7 +116,10 @@ public class Client<I, A> {
                 matrix.reshape(numRows, 3);
                 return (A) new HighLowDiscreteActions(matrix);
             case "Tuple":
-                return (A) new TupleActions();
+                return (A) new TupleActions(Lists.newArrayList(
+                        info.getJSONArray("spaces").iterator()).stream()
+                            .map(x -> (DiscreteActions)actionSpace(((JSONObject)x)))
+                            .toArray(DiscreteActions[]::new));
             default:
                 throw new RuntimeException("Unknown action model " + infoName + " in " + info);
         }
@@ -132,7 +139,7 @@ public class Client<I, A> {
         JSONObject body = new JSONObject().put("action",
                 this.actions.encode(action)).put("render", this.rendered);
         JSONObject reply = ClientUtils.post(this.url + ENVS_ROOT + this.id + STEP, body).getObject();
-        I observation = this.inputs.get(reply);
+        I observation = this.inputs.get(reply.get("observation"));
         double reward = reply.getDouble("reward");
         boolean done = reply.getBoolean("done");
         JSONObject info = reply.getJSONObject("info");
@@ -141,7 +148,7 @@ public class Client<I, A> {
 
     public I reset() {
         JsonNode resetRep = ClientUtils.post(this.url + ENVS_ROOT + this.id + RESET, new JSONObject());
-        return this.inputs.get(resetRep.getObject()); //getValue(resetRep.getObject(), "observation");
+        return this.inputs.get(resetRep.getObject().get("observation")); //getValue(resetRep.getObject(), "observation");
 
     }
 
@@ -358,12 +365,12 @@ public class Client<I, A> {
             try {
                 jsonResponse = resp.asJson();
             } catch (UnirestException e) {
-                //System.err.println(resp.getBody());
-                unirestCrash(e);
+                crash(e, resp.getBody());
             }
 
             return jsonResponse.getBody();
         }
+
 
 
         static public JSONObject get(String url) {
@@ -372,7 +379,7 @@ public class Client<I, A> {
             try {
                 jsonResponse = Unirest.get(url).header("content-type", "application/json").asJson();
             } catch (UnirestException e) {
-                unirestCrash(e);
+                crash(e);
             }
 
             checkReply(jsonResponse, url);
@@ -386,12 +393,16 @@ public class Client<I, A> {
                 throw new RuntimeException("Invalid reply at: " + url);
         }
 
-        static public void unirestCrash(UnirestException e) {
+        static public void crash(UnirestException e) {
             //if couldn't parse json
             if (e.getCause().getCause().getCause() instanceof JSONException)
                 throw new RuntimeException("Couldn't parse json reply.", e);
             else
                 throw new RuntimeException("Connection error", e);
+        }
+        private static void crash(UnirestException e, Object body) {
+            System.err.println(body);
+            crash(e);
         }
 
 

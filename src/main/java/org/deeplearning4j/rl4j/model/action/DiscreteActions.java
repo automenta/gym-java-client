@@ -1,7 +1,5 @@
 package org.deeplearning4j.rl4j.model.action;
 
-import lombok.Getter;
-
 import java.util.Random;
 
 /**
@@ -35,8 +33,4 @@ public class DiscreteActions implements ActionSpace<Integer> {
         return 0;
     }
 
-    @Override
-    public int size() {
-        return size;
-    }
 }

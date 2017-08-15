@@ -1,23 +1,40 @@
 package org.deeplearning4j.rl4j.model.action;
 
-public class TupleActions implements ActionSpace {
+import java.util.Arrays;
+
+/** TODO support mixed and non-Discrete tuple contents.
+ */
+public class TupleActions implements ActionSpace<int[]> {
+
+    private final DiscreteActions[] sub;
+
     @Override
-    public Object random() {
-        return null;
+    public String toString() {
+        return "TupleActions(" +
+                Arrays.toString(sub) +
+                ')';
+    }
+
+    public TupleActions(DiscreteActions[] subspaces) {
+        this.sub = subspaces;
     }
 
     @Override
-    public Object encode(Object action) {
-        return null;
+    public int[] random() {
+        int[] r = new int[sub.length];
+        for (int i = 0; i < r.length; i++) {
+            r[i] = sub[i].random();
+        }
+        return r;
     }
 
-    @Override
-    public int size() {
-        return 0;
+    @Override public Object encode(int[] a) {
+        return a;
     }
 
+
     @Override
-    public Object nop() {
+    public int[] nop() {
         return null;
     }
 }

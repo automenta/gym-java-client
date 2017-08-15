@@ -1,6 +1,5 @@
 package org.deeplearning4j.rl4j.model.in;
 
-import org.json.JSONObject;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
 
@@ -87,10 +86,8 @@ public class ArrayInputSpace<I> implements InputSpace<I[]> {
     }
 
     @Override
-    public I[] get(JSONObject x) {
-        System.out.println(x);
-        return null;
-        //getValue(reply, "observation");
+    public I[] get(Object x) {
+        throw new UnsupportedOperationException("TODO: " + x.getClass() + " " + x);
     }
 
     public int hashCode() {

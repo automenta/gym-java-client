@@ -25,11 +25,9 @@ public interface InputSpace<I> {
 
     String getName();
 
-    int[] getShape();
-
     INDArray getLow();
 
     INDArray getHigh();
 
-    I get(JSONObject x);
+    I get(Object observation);
 }
